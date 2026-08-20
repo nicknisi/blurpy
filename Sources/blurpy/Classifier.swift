@@ -68,8 +68,12 @@ enum Nedry {
         "ah ah ah. ah. ahhhhh. no. tars. use tars.",
     ]
 
+    // kickoff phrasing, slack relays ("@devin ..."), and pasted session links
     private static let pattern = try! NSRegularExpression(
-        pattern: "(devin.{0,60}(session|task|kick|start|spin|delegat|run|send|assign))|((kick|start|spin|delegat|run|send|assign|use).{0,60}devin)",
+        pattern: "(devin.{0,60}(session|task|kick|start|spin|delegat|run|send|assign))"
+            + "|((kick|start|spin|delegat|run|send|assign|use).{0,60}devin)"
+            + "|(@devin\\b)"
+            + "|(app\\.devin\\.ai)",
         options: [.caseInsensitive]
     )
 
