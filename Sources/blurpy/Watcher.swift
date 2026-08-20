@@ -51,7 +51,7 @@ final class Watcher {
     private var offsets: [String: UInt64] = [:]   // file path -> offset
     private var active: [String: String] = [:]    // harness -> file path
     private var pending: [String: String] = [:]   // harness -> accumulated text
-    private var lastAppend = Date.distantPast
+    private var lastAppend: [String: Date] = [:]  // harness -> last append time
     private var timer: Timer?
 
     private let pollSeconds: TimeInterval = 5
@@ -77,15 +77,14 @@ final class Watcher {
             offsets[newest] = r.newOffset
             if !r.text.isEmpty {
                 pending[s.harness, default: ""] += r.text
-                lastAppend = Date()
+                lastAppend[s.harness] = Date()
             }
         }
-        if Date().timeIntervalSince(lastAppend) >= idleSeconds {
-            for (harness, text) in pending where text.count >= minChars {
-                print("[blurpy] flushing \(text.count) chars from \(harness)")
-                onFlush?(harness, String(text.suffix(6000)))
-            }
-            pending.removeAll()
+        for (harness, text) in pending
+        where text.count >= minChars && Date().timeIntervalSince(lastAppend[harness] ?? .distantPast) >= idleSeconds {
+            print("[blurpy] flushing \(text.count) chars from \(harness)")
+            onFlush?(harness, String(text.suffix(6000)))
+            pending.removeValue(forKey: harness)
         }
     }
 }

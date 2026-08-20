@@ -9,10 +9,10 @@ kick off a devin session and he goes full Jurassic Park.
 ## install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/workos/blurpy/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/nicknisi/blurpy/main/install.sh | bash
 ```
 
-needs `gh` authed (for the download). uses `ANTHROPIC_API_KEY` if set,
+no prerequisites. uses `ANTHROPIC_API_KEY` if set,
 falls back to `claude -p`, falls further back to just the nedry gag.
 
 ## uninstall

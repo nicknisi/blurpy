@@ -3,9 +3,9 @@
 # Uninstall:                  curl -sL <raw-url>/install.sh | bash -s uninstall
 set -euo pipefail
 
-REPO="workos/blurpy"
 DEST="$HOME/.blurpy"
 BIN="$DEST/blurpy"
+URL="https://github.com/nicknisi/blurpy/releases/latest/download/blurpy-macos-arm64"
 
 if [[ "${1:-}" == "uninstall" ]]; then
   pkill -f "$BIN" 2>/dev/null && echo "blurpy stopped." || true
@@ -14,14 +14,9 @@ if [[ "${1:-}" == "uninstall" ]]; then
   exit 0
 fi
 
-if ! command -v gh >/dev/null 2>&1; then
-  echo "blurpy needs gh to download: brew install gh && gh auth login"
-  exit 1
-fi
-
 mkdir -p "$DEST"
 echo "summoning blurpy..."
-gh release download --repo "$REPO" --pattern "blurpy-macos-*" --clobber --output "$BIN"
+curl -sL --fail -o "$BIN" "$URL" || { echo "summon failed — is the release up?"; exit 1; }
 chmod +x "$BIN"
 
 # keep a local uninstall around for when the network is far away
