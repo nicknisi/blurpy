@@ -9,7 +9,7 @@ kick off a devin session and he goes full Jurassic Park.
 ## install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/nicknisi/blurpy/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/nicknisi/blurpy/v0.1.1/install.sh | bash
 ```
 
 no prerequisites. uses `ANTHROPIC_API_KEY` if set,
@@ -24,7 +24,7 @@ falls back to `claude -p`, falls further back to just the nedry gag.
 Or remotely:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nicknisi/blurpy/main/install.sh | bash -s -- uninstall
+curl -fsSL https://raw.githubusercontent.com/nicknisi/blurpy/v0.1.1/install.sh | bash -s -- uninstall
 ```
 
 Both kill the process and remove `~/.blurpy` (binary + logs) and `~/.config/blurpy` (optional avatar override). No launch agent or other files are installed.
