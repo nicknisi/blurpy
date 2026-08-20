@@ -1,9 +1,10 @@
 import Cocoa
+import AVFoundation
 
 /// Borderless, transparent, always-on-top Clippy-style popup: character floating
 /// on the desktop with a comic speech bubble, center screen. Springs up from below
 /// with overshoot, animates (two-frame finger wag for nedry, rock otherwise),
-/// SPEAKS the message in Eddy's male voice, slides back down on dismiss.
+/// SPEAKS the message in Fred's verified male voice, slides back down on dismiss.
 /// One at a time; extras queue (cap 3).
 @MainActor
 final class Popup {
@@ -11,11 +12,8 @@ final class Popup {
     private var queue: [(frames: [NSImage?], text: String)] = []
     private var dismissTimer: Timer?
     private var swapTimer: Timer?
-    private let speaker: NSSpeechSynthesizer = {
-        let s = NSSpeechSynthesizer()
-        s.setVoice(NSSpeechSynthesizer.VoiceName(rawValue: "com.apple.eloquence.en-US.Eddy"))
-        return s
-    }()
+    private let speaker = AVSpeechSynthesizer()
+    private let maleVoice = AVSpeechSynthesisVoice(identifier: "com.apple.speech.synthesis.voice.Fred")
 
     func show(_ pitch: Pitch) {
         let imageName = pitch.cowboy ? "blurpy-cowboy" : "blurpy"
@@ -134,8 +132,7 @@ final class Popup {
         slide(panel, toY: final.y, duration: 0.5, ease: backOutEasing) { [weak panel] in
             if let panel { print("[blurpy] settled at \(panel.frame)") }
         }
-        speaker.stopSpeaking()
-        speaker.startSpeaking(text)
+        speak(text)
         dismissTimer = Timer.scheduledTimer(withTimeInterval: 25, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.dismiss() }
         }
@@ -144,7 +141,7 @@ final class Popup {
     private func dismiss() {
         dismissTimer?.invalidate()
         swapTimer?.invalidate()
-        speaker.stopSpeaking()
+        speaker.stopSpeaking(at: .immediate)
         guard let panel, let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
         slide(panel, toY: screen.minY - panel.frame.height, duration: 0.3, ease: easeInCubic) { [weak self] in
             panel.close()
@@ -153,6 +150,39 @@ final class Popup {
                 self?.queue.removeFirst()
                 self?.present(frames: next.frames, text: next.text)
             }
+        }
+    }
+
+    private func speak(_ text: String) {
+        speaker.stopSpeaking(at: .immediate)
+        let voice = maleVoice ?? AVSpeechSynthesisVoice.speechVoices().first { $0.language.hasPrefix("en") && $0.gender == .male }
+        print("[blurpy] voice: \(voice?.name ?? "none"), gender: \(voice?.gender == .male ? "male" : "unknown")")
+
+        let prefix = text.range(of: #"^ah\s+ah\s+ah[.!?,]*\s*"#, options: [.regularExpression, .caseInsensitive])
+        if let prefix {
+            for _ in 0..<3 {
+                let ah = AVSpeechUtterance(string: "Ah.")
+                ah.voice = voice
+                ah.rate = 0.30
+                ah.pitchMultiplier = 0.82
+                ah.postUtteranceDelay = 0.22
+                speaker.speak(ah)
+            }
+            let rest = String(text[prefix.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !rest.isEmpty {
+                let body = AVSpeechUtterance(string: rest)
+                body.voice = voice
+                body.rate = 0.40
+                body.pitchMultiplier = 0.90
+                body.preUtteranceDelay = 0.28
+                speaker.speak(body)
+            }
+        } else {
+            let utterance = AVSpeechUtterance(string: text)
+            utterance.voice = voice
+            utterance.rate = 0.40
+            utterance.pitchMultiplier = 0.90
+            speaker.speak(utterance)
         }
     }
 

@@ -1,4 +1,5 @@
 import XCTest
+import AVFoundation
 @testable import blurpy
 
 final class blurpyTests: XCTestCase {
@@ -30,6 +31,11 @@ final class blurpyTests: XCTestCase {
         let first = Tail.readNew(path: f, offset: 0)
         let second = Tail.readNew(path: f, offset: first.newOffset)
         XCTAssertEqual(second.text, "")
+    }
+
+    func testStartingAtEOFSkipsHistory() throws {
+        let f = try tmpFile(contents: "old devin mention")
+        XCTAssertEqual(Tail.readNew(path: f, offset: Tail.size(path: f)).text, "")
     }
 
     // MARK: - Classifier.parse
@@ -67,6 +73,13 @@ final class blurpyTests: XCTestCase {
     func testNedryIgnoresNonDevin() {
         XCTAssertFalse(Nedry.matches("totally unrelated transcript chunk"))
         XCTAssertFalse(Nedry.matches("kevin fixed the build"))
+    }
+
+    // MARK: - Voice
+
+    func testFredIsInstalledMaleVoice() {
+        let voice = AVSpeechSynthesisVoice(identifier: "com.apple.speech.synthesis.voice.Fred")
+        XCTAssertEqual(voice?.gender, .male)
     }
 
     // MARK: - helpers

@@ -20,6 +20,12 @@ enum Tail {
         return best?.path
     }
 
+    static func size(path: String) -> UInt64 {
+        guard let fh = FileHandle(forReadingAtPath: path), let size = try? fh.seekToEnd() else { return 0 }
+        try? fh.close()
+        return size
+    }
+
     /// Read new bytes since `offset`, capped at `cap` bytes (taken from the tail of the gap).
     /// Returns the text and the new offset.
     static func readNew(path: String, offset: UInt64, cap: Int = 8192) -> (text: String, newOffset: UInt64) {
@@ -47,6 +53,7 @@ final class Watcher {
     ]
 
     var onFlush: ((String, String) -> Void)?
+    var onDevin: (() -> Void)?
 
     private var offsets: [String: UInt64] = [:]   // file path -> offset
     private var active: [String: String] = [:]    // harness -> file path
@@ -59,10 +66,18 @@ final class Watcher {
     private let minChars = 200
 
     func start() {
+        // Start at EOF so old transcript history cannot retrigger on launch.
+        for s in sources {
+            if let newest = Tail.newestJSONL(in: s.root) {
+                active[s.harness] = newest
+                offsets[newest] = Tail.size(path: newest)
+                print("[blurpy] \(s.harness) active file: \(URL(fileURLWithPath: newest).lastPathComponent)")
+            }
+            print("[blurpy] watching \(s.harness): ~/\(s.root)")
+        }
         timer = Timer.scheduledTimer(withTimeInterval: pollSeconds, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
-        for s in sources { print("[blurpy] watching \(s.harness): ~/\(s.root)") }
     }
 
     func tick() {
@@ -76,6 +91,10 @@ final class Watcher {
             let r = Tail.readNew(path: newest, offset: offsets[newest] ?? 0)
             offsets[newest] = r.newOffset
             if !r.text.isEmpty {
+                if Nedry.matches(r.text) {
+                    print("[blurpy] devin detected in \(s.harness)")
+                    onDevin?()
+                }
                 pending[s.harness, default: ""] += r.text
                 lastAppend[s.harness] = Date()
             }

@@ -26,13 +26,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.terminate(nil)
             return
         }
+        watcher.onDevin = { [weak self] in
+            self?.popup.showNedry(Nedry.caption())
+        }
         watcher.onFlush = { [weak self] harness, chunk in
             Task { @MainActor in
                 guard let self else { return }
-                if Nedry.matches(chunk) {
-                    self.popup.showNedry(Nedry.caption())
-                    return
-                }
                 let pitch: Pitch?
                 switch brain {
                 case .api(let key):
