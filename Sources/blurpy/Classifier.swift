@@ -72,7 +72,7 @@ enum Nedry {
     private static let pattern = try! NSRegularExpression(
         pattern: "(devin.{0,60}(session|task|kick|start|spin|delegat|run|send|assign))"
             + "|((kick|start|spin|delegat|run|send|assign|use).{0,60}devin)"
-            + "|(@devin\\b)"
+            + "|(@devin\\s+ai)"
             + "|(app\\.devin\\.ai)",
         options: [.caseInsensitive]
     )

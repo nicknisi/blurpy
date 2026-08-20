@@ -60,12 +60,13 @@ final class blurpyTests: XCTestCase {
         XCTAssertTrue(Nedry.matches("kick off a devin session to refactor the auth module"))
         XCTAssertTrue(Nedry.matches("let's delegate this to devin"))
         XCTAssertTrue(Nedry.matches("start a devin task"))
-        XCTAssertTrue(Nedry.matches("told @devin to fix the flaky login test"))
+        XCTAssertTrue(Nedry.matches("told @devin ai to fix the flaky login test"))
         XCTAssertTrue(Nedry.matches("here's the session: https://app.devin.ai/sessions/abc123"))
     }
 
     func testNedryIgnoresCasualMentions() {
         XCTAssertFalse(Nedry.matches("devin broke the deploy again"))
+        XCTAssertFalse(Nedry.matches("pinged @devin about lunch")) // the human
         XCTAssertFalse(Nedry.matches("totally unrelated transcript chunk"))
     }
 
