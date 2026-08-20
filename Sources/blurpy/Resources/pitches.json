@@ -1,0 +1,62 @@
+{
+  "initiatives": [
+    {
+      "id": "arc",
+      "name": "arc",
+      "description": "WorkOS's fork of the pi agent harness",
+      "triggers": "Heavy Claude Code, Codex, or other non-WorkOS harness usage; general agent-loop work in a consumer tool"
+    },
+    {
+      "id": "tars",
+      "name": "TARS",
+      "description": "Internal dev agent, Slack-native (@pi-tars), powered by arc. Does general-purpose dev work, has watch mode",
+      "triggers": "Hand-doing dev tasks an agent could take; background coding work; things you could delegate"
+    },
+    {
+      "id": "alto",
+      "name": "Alto",
+      "description": "The governed agent runtime/platform: deploy agents, Slack integration, model gateway, audited tool calls",
+      "triggers": "Hand-rolling an agent loop, tool auditing, model proxying, building a Slack bot or deployable agent"
+    },
+    {
+      "id": "wallaby",
+      "name": "Wallaby",
+      "description": "Applied-AI GTM/ops agent: Luma events, CRM dedup, metrics, business ops automation",
+      "triggers": "Scripting ops/GTM/data tasks by hand; event management; CRM cleanup; metrics pulling"
+    },
+    {
+      "id": "atlas",
+      "name": "Atlas",
+      "description": "Security-engineering AI initiative",
+      "triggers": "Manual security review, vulnerability triage, security analysis work"
+    }
+  ],
+  "skills": [
+    { "id": "auth-specialist", "description": "WorkOS authentication and enterprise SSO integration toolkit" },
+    { "id": "claude-tag-horizon", "description": "Connect to Horizon, WorkOS's internal tooling MCP server" },
+    { "id": "claude-tag-incidentio", "description": "incident.io MCP: incident management, alerts, on-call schedules, escalations" },
+    { "id": "claude-tag-pganalyze", "description": "pganalyze MCP: PostgreSQL monitoring, query analysis, index recommendations" },
+    { "id": "claude-tag-slack", "description": "Slack MCP: channel search, messaging, canvases" },
+    { "id": "claude-tag-snowflake", "description": "Snowflake MCP: governed data queries, Cortex AI" },
+    { "id": "concierge", "description": "Build WorkOS Concierge onboarding guides from deal context" },
+    { "id": "drop", "description": "Publish reports/dashboards/prototypes to Drop instead of artifacts" },
+    { "id": "dx", "description": "Developer experience tools for SDK review and engineering workflows" },
+    { "id": "flashboard", "description": "Self-contained HTML dashboards querying Snowflake live on load" },
+    { "id": "friction-proctor", "description": "DX friction-log program tooling" },
+    { "id": "ghostwriter", "description": "Auto-triage Plain threads and draft responses in your voice" },
+    { "id": "gifted-kid", "description": "Technical artifact generation for WorkOS deals (POCs etc.)" },
+    { "id": "gtm-admin", "description": "GTM onboarding packets and new-hire onboarding" },
+    { "id": "inbound-qualifier", "description": "Qualify inbound demo calls against ICP" },
+    { "id": "make-infographic", "description": "On-brand standalone HTML infographics" },
+    { "id": "migrate-to-design-system", "description": "Migrate internal apps to the WorkOS design system" },
+    { "id": "plan-requests", "description": "Share agent plans with colleagues" },
+    { "id": "pmm-deliverables", "description": "Sales and marketing content: outreach, one-pagers, talking points" },
+    { "id": "ui-nits-triage-enricher", "description": "Enrich and triage UI Nits issues in Linear" },
+    { "id": "wiz-kid", "description": "MEDDPICC sales workflow for AEs and SEs" },
+    { "id": "workos-data-analyst", "description": "Answer business questions with governed company data" },
+    { "id": "workos-data-engineer", "description": "Build/change/troubleshoot the data-platform monorepo" },
+    { "id": "workos-demo-factory", "description": "On-demand factory for customer demos and issue repros" },
+    { "id": "workos-post-incident", "description": "Post-incident analysis" },
+    { "id": "wtfdyd", "description": "Customer context archaeology for DSE handoffs" }
+  ]
+}
