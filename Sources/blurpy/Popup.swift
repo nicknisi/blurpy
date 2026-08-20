@@ -88,10 +88,8 @@ final class Popup {
         print("[blurpy] popup on screen")
         self.panel = panel
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.55
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.34, 1.56, 0.64, 1)
-            panel.animator().setFrameOrigin(final)
+        slide(panel, toY: final.y, duration: 0.5, ease: backOutEasing) { [weak panel] in
+            if let panel { print("[blurpy] settled at \(panel.frame)") }
         }
         dismissTimer = Timer.scheduledTimer(withTimeInterval: 25, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.dismiss() }
@@ -101,22 +99,45 @@ final class Popup {
     private func dismiss() {
         dismissTimer?.invalidate()
         guard let panel, let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.3
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().setFrameOrigin(NSPoint(x: panel.frame.minX, y: screen.minY - panel.frame.height))
-        } completionHandler: { [weak self] in
-            Task { @MainActor in
-                panel.close()
-                self?.panel = nil
-                if let next = self?.queue.first {
-                    self?.queue.removeFirst()
-                    self?.present(image: next.image, text: next.text)
-                }
+        slide(panel, toY: screen.minY - panel.frame.height, duration: 0.3, ease: easeInCubic) { [weak self] in
+            panel.close()
+            self?.panel = nil
+            if let next = self?.queue.first {
+                self?.queue.removeFirst()
+                self?.present(image: next.image, text: next.text)
             }
         }
     }
+
+    /// Per-tick frame animation. NSWindow's animator proxy is unreliable on
+    /// borderless panels — never trust it again.
+    private func slide(_ panel: NSPanel, toY targetY: CGFloat, duration: TimeInterval, ease: @escaping @Sendable (Double) -> Double, then: @escaping @MainActor @Sendable () -> Void = {}) {
+        let startY = panel.frame.minY
+        let start = Date()
+        // assumeIsolated is safe: timers scheduled here fire on the main runloop
+        Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
+            let timer = SendableTimer(timer: timer)
+            MainActor.assumeIsolated {
+                let t = min(1, Date().timeIntervalSince(start) / duration)
+                panel.setFrameOrigin(NSPoint(x: panel.frame.minX, y: startY + (targetY - startY) * CGFloat(ease(t))))
+                if t >= 1 { timer.timer.invalidate(); then() }
+            }
+        }
+    }
+
 }
+
+/// Timer isn't Sendable; we know it's confined to the main runloop.
+private struct SendableTimer: @unchecked Sendable { let timer: Timer }
+
+/// Overshoot easing (back-out), for the springy entrance.
+private func backOutEasing(_ t: Double) -> Double {
+    let s = 1.70158 * 1.3
+    let u = t - 1
+    return 1 + (s + 1) * u * u * u + s * u * u
+}
+
+private func easeInCubic(_ t: Double) -> Double { t * t * t }
 
 /// White comic speech bubble with a tail pointing down-left at the character.
 private final class BubbleView: NSView {

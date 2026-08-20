@@ -68,14 +68,8 @@ enum Nedry {
         "ah ah ah. ah. ahhhhh. no. tars. use tars.",
     ]
 
-    // kickoff phrasing, slack relays ("@devin ..."), and pasted session links
-    private static let pattern = try! NSRegularExpression(
-        pattern: "(devin.{0,60}(session|task|kick|start|spin|delegat|run|send|assign))"
-            + "|((kick|start|spin|delegat|run|send|assign|use).{0,60}devin)"
-            + "|(@devin\\s+ai)"
-            + "|(app\\.devin\\.ai)",
-        options: [.caseInsensitive]
-    )
+    // any mention of devin at all. human or AI, blurpy does not care.
+    private static let pattern = try! NSRegularExpression(pattern: "devin", options: [.caseInsensitive])
 
     static func matches(_ chunk: String) -> Bool {
         pattern.firstMatch(in: chunk, range: NSRange(chunk.startIndex..., in: chunk)) != nil
