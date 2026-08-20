@@ -77,11 +77,15 @@ final class Popup {
         bubble.addSubview(label)
 
         panel.contentView = click
-        guard let screen = NSScreen.main?.visibleFrame else { return }
+        guard let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else {
+            print("[blurpy] no screen — popup swallowed")
+            return
+        }
         let final = NSPoint(x: screen.maxX - width - 24, y: screen.minY + 12)
         panel.setFrameOrigin(NSPoint(x: final.x, y: screen.minY - height))
         panel.alphaValue = 1
         panel.orderFrontRegardless()
+        print("[blurpy] popup on screen")
         self.panel = panel
 
         NSAnimationContext.runAnimationGroup { ctx in
@@ -96,7 +100,7 @@ final class Popup {
 
     private func dismiss() {
         dismissTimer?.invalidate()
-        guard let panel, let screen = NSScreen.main?.visibleFrame else { return }
+        guard let panel, let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.3
             ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
