@@ -163,24 +163,24 @@ final class Popup {
             for _ in 0..<3 {
                 let ah = AVSpeechUtterance(string: "Ah.")
                 ah.voice = voice
-                ah.rate = 0.30
+                ah.rate = 0.34
                 ah.pitchMultiplier = 0.82
-                ah.postUtteranceDelay = 0.22
+                ah.postUtteranceDelay = 0.18
                 speaker.speak(ah)
             }
             let rest = String(text[prefix.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
             if !rest.isEmpty {
                 let body = AVSpeechUtterance(string: rest)
                 body.voice = voice
-                body.rate = 0.40
+                body.rate = 0.45
                 body.pitchMultiplier = 0.90
-                body.preUtteranceDelay = 0.28
+                body.preUtteranceDelay = 0.20
                 speaker.speak(body)
             }
         } else {
             let utterance = AVSpeechUtterance(string: text)
             utterance.voice = voice
-            utterance.rate = 0.40
+            utterance.rate = 0.45
             utterance.pitchMultiplier = 0.90
             speaker.speak(utterance)
         }

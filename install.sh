@@ -9,8 +9,8 @@ URL="https://github.com/nicknisi/blurpy/releases/latest/download/blurpy-macos-ar
 
 if [[ "${1:-}" == "uninstall" ]]; then
   pkill -f "$BIN" 2>/dev/null && echo "blurpy stopped." || true
-  rm -rf "$DEST"
-  echo "blurpy is gone. he was never here."
+  rm -rf "$DEST" "$HOME/.config/blurpy"
+  echo "blurpy is gone. process, files, logs, and overrides removed."
   exit 0
 fi
 
@@ -23,8 +23,8 @@ chmod +x "$BIN"
 cat > "$DEST/uninstall.sh" <<'EOF'
 #!/usr/bin/env bash
 pkill -f "$HOME/.blurpy/blurpy" 2>/dev/null && echo "blurpy stopped." || true
-rm -rf "$HOME/.blurpy"
-echo "blurpy is gone. he was never here."
+rm -rf "$HOME/.blurpy" "$HOME/.config/blurpy"
+echo "blurpy is gone. process, files, logs, and overrides removed."
 EOF
 chmod +x "$DEST/uninstall.sh"
 

@@ -21,7 +21,13 @@ falls back to `claude -p`, falls further back to just the nedry gag.
 ~/.blurpy/uninstall.sh
 ```
 
-kills him and removes every trace. he was never here.
+Or remotely:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nicknisi/blurpy/main/install.sh | bash -s -- uninstall
+```
+
+Both kill the process and remove `~/.blurpy` (binary + logs) and `~/.config/blurpy` (optional avatar override). No launch agent or other files are installed.
 
 ## develop
 

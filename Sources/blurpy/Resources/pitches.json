@@ -9,7 +9,7 @@
     {
       "id": "tars",
       "name": "TARS",
-      "description": "Internal dev agent, Slack-native (@pi-tars), powered by arc. Does general-purpose dev work, has watch mode",
+      "description": "Internal dev agent, Slack-native, powered by arc. Does general-purpose dev work, has watch mode",
       "triggers": "Hand-doing dev tasks an agent could take; background coding work; things you could delegate"
     },
     {
