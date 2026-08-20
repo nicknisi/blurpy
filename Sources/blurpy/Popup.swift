@@ -2,27 +2,33 @@ import Cocoa
 
 /// Borderless, transparent, always-on-top Clippy-style popup: character floating
 /// on the desktop with a comic speech bubble, center screen. Springs up from below
-/// with overshoot, rocks back and forth (the wag), SPEAKS the message, slides back
-/// down on dismiss. One at a time; extras queue (cap 3).
+/// with overshoot, animates (two-frame finger wag for nedry, rock otherwise),
+/// SPEAKS the message in Eddy's male voice, slides back down on dismiss.
+/// One at a time; extras queue (cap 3).
 @MainActor
 final class Popup {
     private var panel: NSPanel?
-    private var queue: [(image: NSImage?, text: String)] = []
+    private var queue: [(frames: [NSImage?], text: String)] = []
     private var dismissTimer: Timer?
-    private let speaker = NSSpeechSynthesizer()
+    private var swapTimer: Timer?
+    private let speaker: NSSpeechSynthesizer = {
+        let s = NSSpeechSynthesizer()
+        s.setVoice(NSSpeechSynthesizer.VoiceName(rawValue: "com.apple.eloquence.en-US.Eddy"))
+        return s
+    }()
 
     func show(_ pitch: Pitch) {
         let imageName = pitch.cowboy ? "blurpy-cowboy" : "blurpy"
-        enqueue(image: Self.bundledImage(imageName), text: pitch.message)
+        enqueue(frames: [Self.bundledImage(imageName)], text: pitch.message)
         print("[blurpy] PITCH (\(pitch.id)\(pitch.cowboy ? ", cowboy" : "")): \(pitch.message)")
     }
 
     func showNedry(_ caption: String) {
         // ~/.config/blurpy/nedry.png overrides the bundled asset
         let overridePath = NSHomeDirectory() + "/.config/blurpy/nedry.png"
-        let image = (FileManager.default.fileExists(atPath: overridePath) ? NSImage(contentsOfFile: overridePath) : nil)
+        let frame1 = (FileManager.default.fileExists(atPath: overridePath) ? NSImage(contentsOfFile: overridePath) : nil)
             ?? Self.bundledImage("nedry")
-        enqueue(image: image, text: caption)
+        enqueue(frames: [frame1, Self.bundledImage("nedry-wag")], text: caption)
         print("[blurpy] NEDRY: \(caption)")
     }
 
@@ -30,15 +36,15 @@ final class Popup {
         Bundle.module.url(forResource: name, withExtension: "png").flatMap { NSImage(contentsOf: $0) }
     }
 
-    private func enqueue(image: NSImage?, text: String) {
+    private func enqueue(frames: [NSImage?], text: String) {
         if panel != nil {
-            if queue.count < 3 { queue.append((image, text)) }
+            if queue.count < 3 { queue.append((frames, text)) }
             return
         }
-        present(image: image, text: text)
+        present(frames: frames, text: text)
     }
 
-    private func present(image: NSImage?, text: String) {
+    private func present(frames: [NSImage?], text: String) {
         let width: CGFloat = 430
         let font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         let maxTextW = width - 132 - 28
@@ -66,26 +72,38 @@ final class Popup {
 
         let imageRect = NSRect(x: 10, y: 4, width: 120, height: 120)
         let imageView = NSImageView(frame: imageRect)
-        imageView.image = image
+        imageView.image = frames[0]
         imageView.imageScaling = .scaleProportionallyUpOrDown
         let shadow = NSShadow()
         shadow.shadowColor = NSColor.black.withAlphaComponent(0.35)
         shadow.shadowBlurRadius = 6
         shadow.shadowOffset = .init(width: 0, height: -2)
         imageView.shadow = shadow
-        imageView.wantsLayer = true
-        if let layer = imageView.layer {
-            // pivot near the bottom so the rock reads as a scolding wag
-            layer.anchorPoint = CGPoint(x: 0.5, y: 0.05)
-            layer.frame = imageRect
-            let rock = CABasicAnimation(keyPath: "transform.rotation.z")
-            rock.fromValue = -0.10
-            rock.toValue = 0.10
-            rock.duration = 0.25
-            rock.autoreverses = true
-            rock.repeatCount = .infinity
-            rock.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            layer.add(rock, forKey: "wag")
+
+        if frames.count > 1 {
+            // two-frame animation: the finger wag
+            let flag = BoolBox()
+            swapTimer = Timer.scheduledTimer(withTimeInterval: 0.28, repeats: true) { _ in
+                MainActor.assumeIsolated {
+                    flag.value.toggle()
+                    imageView.image = frames[flag.value ? 0 : 1]
+                }
+            }
+        } else {
+            // single frame: rock the whole image, pivot near the bottom
+            imageView.wantsLayer = true
+            if let layer = imageView.layer {
+                layer.anchorPoint = CGPoint(x: 0.5, y: 0.05)
+                layer.frame = imageRect
+                let rock = CABasicAnimation(keyPath: "transform.rotation.z")
+                rock.fromValue = -0.10
+                rock.toValue = 0.10
+                rock.duration = 0.25
+                rock.autoreverses = true
+                rock.repeatCount = .infinity
+                rock.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                layer.add(rock, forKey: "wag")
+            }
         }
         click.addSubview(imageView)
 
@@ -125,6 +143,7 @@ final class Popup {
 
     private func dismiss() {
         dismissTimer?.invalidate()
+        swapTimer?.invalidate()
         speaker.stopSpeaking()
         guard let panel, let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
         slide(panel, toY: screen.minY - panel.frame.height, duration: 0.3, ease: easeInCubic) { [weak self] in
@@ -132,7 +151,7 @@ final class Popup {
             self?.panel = nil
             if let next = self?.queue.first {
                 self?.queue.removeFirst()
-                self?.present(image: next.image, text: next.text)
+                self?.present(frames: next.frames, text: next.text)
             }
         }
     }
@@ -156,6 +175,9 @@ final class Popup {
 
 /// Timer isn't Sendable; we know it's confined to the main runloop.
 private struct SendableTimer: @unchecked Sendable { let timer: Timer }
+
+/// Mutable flag shared with a main-runloop timer block.
+private final class BoolBox: @unchecked Sendable { var value = false }
 
 /// Overshoot easing (back-out), for the springy entrance.
 private func backOutEasing(_ t: Double) -> Double {
