@@ -62,6 +62,7 @@ struct PitchSheet: Sendable {
 /// Pure local regex — no LLM needed, fires even without an API key.
 enum Nedry {
     static let captions = [
+        "ah ah ah. you shouldn't be using devin.",
         "ah ah ah. you didn't say the magic word. the magic word was 'TARS'.",
         "ah ah ah. devin? in THIS economy? @pi-tars is right there.",
         "ah ah ah. outsourcing to devin while TARS collects dust. noted. NOTED.",

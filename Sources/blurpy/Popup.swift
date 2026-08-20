@@ -1,13 +1,15 @@
 import Cocoa
 
 /// Borderless, transparent, always-on-top Clippy-style popup: character floating
-/// on the desktop with a comic speech bubble. Springs up from below the screen,
-/// slides back down on dismiss. One at a time; extras queue (cap 3).
+/// on the desktop with a comic speech bubble, center screen. Springs up from below
+/// with overshoot, rocks back and forth (the wag), SPEAKS the message, slides back
+/// down on dismiss. One at a time; extras queue (cap 3).
 @MainActor
 final class Popup {
     private var panel: NSPanel?
     private var queue: [(image: NSImage?, text: String)] = []
     private var dismissTimer: Timer?
+    private let speaker = NSSpeechSynthesizer()
 
     func show(_ pitch: Pitch) {
         let imageName = pitch.cowboy ? "blurpy-cowboy" : "blurpy"
@@ -38,7 +40,15 @@ final class Popup {
 
     private func present(image: NSImage?, text: String) {
         let width: CGFloat = 430
-        let height: CGFloat = 210
+        let font = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        let maxTextW = width - 132 - 28
+        let textH = ceil((text as NSString).boundingRect(
+            with: NSSize(width: maxTextW, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font]
+        ).height)
+        let height = max(150, textH + 26 + 56)
+
         let panel = NSPanel(
             contentRect: .init(x: 0, y: 0, width: width, height: height),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -54,7 +64,8 @@ final class Popup {
         let click = ClickView { [weak self] in self?.dismiss() }
         click.frame = NSRect(x: 0, y: 0, width: width, height: height)
 
-        let imageView = NSImageView(frame: NSRect(x: 10, y: 4, width: 120, height: 120))
+        let imageRect = NSRect(x: 10, y: 4, width: 120, height: 120)
+        let imageView = NSImageView(frame: imageRect)
         imageView.image = image
         imageView.imageScaling = .scaleProportionallyUpOrDown
         let shadow = NSShadow()
@@ -62,6 +73,20 @@ final class Popup {
         shadow.shadowBlurRadius = 6
         shadow.shadowOffset = .init(width: 0, height: -2)
         imageView.shadow = shadow
+        imageView.wantsLayer = true
+        if let layer = imageView.layer {
+            // pivot near the bottom so the rock reads as a scolding wag
+            layer.anchorPoint = CGPoint(x: 0.5, y: 0.05)
+            layer.frame = imageRect
+            let rock = CABasicAnimation(keyPath: "transform.rotation.z")
+            rock.fromValue = -0.10
+            rock.toValue = 0.10
+            rock.duration = 0.25
+            rock.autoreverses = true
+            rock.repeatCount = .infinity
+            rock.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            layer.add(rock, forKey: "wag")
+        }
         click.addSubview(imageView)
 
         let bubble = BubbleView(frame: NSRect(x: 118, y: 26, width: width - 132, height: height - 44))
@@ -69,7 +94,7 @@ final class Popup {
 
         let label = NSTextField(wrappingLabelWithString: text)
         label.frame = bubble.bounds.insetBy(dx: 14, dy: 12)
-        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        label.font = font
         label.textColor = .black
         label.isBezeled = false
         label.isEditable = false
@@ -81,7 +106,7 @@ final class Popup {
             print("[blurpy] no screen — popup swallowed")
             return
         }
-        let final = NSPoint(x: screen.maxX - width - 24, y: screen.minY + 12)
+        let final = NSPoint(x: screen.midX - width / 2, y: screen.midY - height / 2)
         panel.setFrameOrigin(NSPoint(x: final.x, y: screen.minY - height))
         panel.alphaValue = 1
         panel.orderFrontRegardless()
@@ -91,6 +116,8 @@ final class Popup {
         slide(panel, toY: final.y, duration: 0.5, ease: backOutEasing) { [weak panel] in
             if let panel { print("[blurpy] settled at \(panel.frame)") }
         }
+        speaker.stopSpeaking()
+        speaker.startSpeaking(text)
         dismissTimer = Timer.scheduledTimer(withTimeInterval: 25, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.dismiss() }
         }
@@ -98,6 +125,7 @@ final class Popup {
 
     private func dismiss() {
         dismissTimer?.invalidate()
+        speaker.stopSpeaking()
         guard let panel, let screen = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { return }
         slide(panel, toY: screen.minY - panel.frame.height, duration: 0.3, ease: easeInCubic) { [weak self] in
             panel.close()
@@ -124,7 +152,6 @@ final class Popup {
             }
         }
     }
-
 }
 
 /// Timer isn't Sendable; we know it's confined to the main runloop.
